@@ -1,0 +1,505 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.toolbar {
+    background-color: #333;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.toolbar button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.toolbar button:hover {
+    background-color: #45a049;
+}
+
+.query-area, .result-area {
+    flex: 1;
+    margin: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.query-area textarea {
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    resize: none;
+    box-sizing: border-box;
+    font-family: monospace;
+}
+
+.result-area pre {
+    padding: 10px;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 5px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.result-area pre {
+    padding: 0;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow: auto;
+    height: 100%;
+    box-sizing: border-box;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* Result table styles */
+.result-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0px;
+    font-family: monospace;
+}
+
+.result-table th, .result-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.result-table th {
+    background-color: #f2f2f2;
+    position: sticky;
+    top: 0;
+}
+
+.result-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.result-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Loading and error messages */
+.loading, .error {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.loading {
+    background-color: #e6f7ff;
+    color: #0056b3;
+}
+
+.error {
+    background-color: #ffebee;
+    color: #d32f2f;
+}
+
+/* Scrollable result area */
+.result-area {
+    overflow: auto;
+    max-height: 40vh;
+}
+
+/* Add these styles for the save modal */
+#save-modal .modal-content {
+    min-height: auto;
+    height: auto;
+    max-width: 400px;
+}
+
+#save-modal .form-group {
+    margin-bottom: 20px;
+}
+
+#save-modal button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#save-modal button:hover {
+    background-color: #45a049;
+}
+
+#query-name {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+/* Queries Modal Styles */
+.queries-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.query-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.query-item:hover {
+    background-color: #f5f5f5;
+}
+
+.query-item.selected {
+    background-color: #e6f7ff;
+    font-weight: bold;
+}
+
+.no-queries {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.queries-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.queries-actions button {
+    flex: 1;
+    padding: 10px;
+}
+
+.delete-btn {
+    background-color: #f44336 !important;
+}
+
+.delete-btn:hover {
+    background-color: #d32f2f !important;
+}
+
+/* Create Table Modal Styles */
+.columns-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.columns-table th, .columns-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.columns-table th {
+    background-color: #f2f2f2;
+}
+
+.columns-table input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.columns-table select {
+    width: 100%;
+    padding: 5px;
+}
+
+.table-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.table-actions button {
+    padding: 10px 15px;
+}
+
+.table-actions button:first-child {
+    background-color: #2196F3;
+}
+
+.table-actions button:last-child {
+    background-color: #4CAF50;
+}
+
+.table-actions button:hover {
+    opacity: 0.9;
+}
+
+/* Delete Table Modal Styles */
+.tables-select {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.modal-actions button:last-child {
+    background-color: #f1f1f1;
+}
+
+.modal-actions button:last-child:hover {
+    background-color: #e1e1e1;
+}
+
+/* Edit Table Modal Styles */
+#edit-table-selection {
+    margin-bottom: 20px;
+}
+
+#edit-table-selection .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-table-selection select {
+    flex: 1;
+}
+
+#edit-table-selection button {
+    padding: 8px 16px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#edit-table-selection button:hover {
+    background-color: #0b7dda;
+}
+
+#edit-table-form .table-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+#edit-table-form .table-actions button:first-child {
+    background-color: #2196F3;
+}
+
+#edit-table-form .table-actions button:last-child {
+    background-color: #4CAF50;
+}
+
+#edit-table-form .table-actions button:hover {
+    opacity: 0.9;
+}
+
+/* Export Modal Styles */
+#export-result-message {
+    white-space: pre-wrap;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+#export-result-modal button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#export-result-modal button:hover {
+    background-color: #45a049;
+}
+
+/* Export Result Modal Styles */
+#export-result-message {
+    white-space: pre-wrap;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+#export-result-modal button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#export-result-modal button:hover {
+    background-color: #45a049;
+}
+
+/* Backup Modal Styles */
+#backup-status {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+}
+
+#backup-status .success {
+    color: #4CAF50;
+}
+
+#backup-status .error {
+    color: #f44336;
+}
+
+#backup-result .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+#backup-result input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#backup-result button {
+    padding: 8px 16px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#backup-result button:hover {
+    background-color: #0b7dda;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 8px 16px;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.modal-actions button:hover {
+    background-color: #e1e1e1;
+}

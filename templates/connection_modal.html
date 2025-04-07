@@ -1,0 +1,24 @@
+<h2>Подключение к базе данных</h2>
+<form id="connection-form" onsubmit="event.preventDefault(); connectToDB();">
+    <div class="form-group">
+        <label for="host">Хост:</label>
+        <input type="text" id="host" name="host" required placeholder="localhost">
+    </div>
+    <div class="form-group">
+        <label for="port">Порт:</label>
+        <input type="text" id="port" name="port" required placeholder="5432">
+    </div>
+    <div class="form-group">
+        <label for="dbname">Имя базы данных:</label>
+        <input type="text" id="dbname" name="dbname" required>
+    </div>
+    <div class="form-group">
+        <label for="username">Пользователь:</label>
+        <input type="text" id="username" name="username" required>
+    </div>
+    <div class="form-group">
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit">Подключиться</button>
+</form>

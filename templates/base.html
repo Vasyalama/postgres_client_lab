@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <header class="toolbar">
+        <button onclick="showConnectionModal()">Подключиться</button>
+        <button onclick="executeQuery()">Выполнить запрос</button>
+        <button onclick="saveQuery()">Сохранить запрос</button>
+        <button onclick="showQueries()">Созданные запросы</button>
+        <button onclick="showLabQueries()">Запросы из 4 и 5 лабы</button>
+        <button onclick="showCreateTableModal()">Создать таблицу</button>
+        <button onclick="deleteTable()">Удалить таблицу</button>
+        <button onclick="editTable()">Редактировать таблицу</button>
+        <button onclick="showExportTableModal()">Экспорт таблицы в CSV</button>
+        <button onclick="exportResults()">Экспорт результатов запроса</button>
+        <button onclick="createBackup()">Создать бэкап</button>
+        <button onclick="restoreBackup()">Восстановить бэкап</button>
+    </header>
+
+    <div class="query-area">
+        <textarea id="sql-query" placeholder="Введите SQL запрос здесь..."></textarea>
+    </div>
+
+    <div class="result-area">
+        <pre id="query-result">{{.QueryResult}}</pre>
+    </div>
+</div>
+
+<!-- Connection Modal -->
+<div id="connection-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideConnectionModal()">&times;</span>
+        <div id="modal-body">
+            <!-- Content will be loaded via AJAX -->
+        </div>
+    </div>
+</div>
+
+<!-- Save Query Modal -->
+<div id="save-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideSaveModal()">&times;</span>
+        <h2>Сохранить запрос</h2>
+        <div class="form-group">
+            <label for="query-name">Название запроса:</label>
+            <input type="text" id="query-name" placeholder="Введите название">
+        </div>
+        <button onclick="saveQueryToFile()">Сохранить</button>
+    </div>
+</div>
+
+<!-- Queries Modal -->
+<div id="queries-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 800px;">
+        <span class="close" onclick="hideQueriesModal()">&times;</span>
+        <h2>Сохраненные запросы</h2>
+        <div id="queries-list" class="queries-list">
+            <!-- Queries will be loaded here -->
+        </div>
+        <div class="queries-actions">
+            <button onclick="executeSelectedQuery()">Выполнить</button>
+            <button onclick="editSelectedQuery()">Редактировать</button>
+            <button onclick="deleteSelectedQuery()" class="delete-btn">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Query Modal -->
+<div id="edit-query-modal" class="modal">
+    <div class="modal-content" style="width: 80%; max-width: 900px; height: 80%;">
+        <span class="close" onclick="hideEditQueryModal()">&times;</span>
+        <h2>Редактировать запрос</h2>
+        <div class="form-group">
+            <label for="edit-query-name">Название запроса:</label>
+            <input type="text" id="edit-query-name" readonly>
+        </div>
+        <textarea id="edit-query-content" style="width: 100%; height: 70%; font-family: monospace;"></textarea>
+        <div class="modal-actions">
+            <button onclick="saveEditedQuery()">Сохранить</button>
+            <button onclick="hideEditQueryModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<div id="lab-queries-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 800px;">
+        <span class="close" onclick="hideLabQueriesModal()">&times;</span>
+        <h2>Сохраненные запросы</h2>
+        <div id="lab-queries-list" class="queries-list">
+            <!-- Queries will be loaded here -->
+        </div>
+        <div class="queries-actions">
+            <button onclick="executeSelectedLabQuery()">Выполнить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Table Modal -->
+<div id="create-table-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 800px;">
+        <span class="close" onclick="hideCreateTableModal()">&times;</span>
+        <h2>Создать таблицу</h2>
+        <div class="form-group">
+            <label for="table-name">Название таблицы:</label>
+            <input type="text" id="table-name" placeholder="Введите название таблицы">
+        </div>
+
+        <h3>Поля таблицы:</h3>
+        <table id="columns-table" class="columns-table">
+            <thead>
+            <tr>
+                <th>Имя поля</th>
+                <th>Тип данных</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="columns-body">
+            <!-- Columns will be added here -->
+            </tbody>
+        </table>
+
+        <div class="table-actions">
+            <button type="button" onclick="addColumn()">Добавить поле</button>
+            <button type="button" onclick="createTable()">Создать таблицу</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Table Modal -->
+<div id="delete-table-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 600px;">
+        <span class="close" onclick="hideDeleteTableModal()">&times;</span>
+        <h2>Удалить таблицу</h2>
+        <div id="tables-list-container">
+            <p>Загрузка списка таблиц...</p>
+        </div>
+        <div class="modal-actions">
+            <button onclick="confirmDeleteTable()" class="delete-btn">Удалить</button>
+            <button onclick="hideDeleteTableModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Table Modal -->
+<div id="edit-table-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 800px;">
+        <span class="close" onclick="hideEditTableModal()">&times;</span>
+        <h2>Редактировать таблицу</h2>
+
+        <div id="edit-table-selection">
+            <div class="form-group">
+                <label>Выберите таблицу для редактирования:</label>
+                <select id="edit-tables-list" class="tables-select"></select>
+                <button onclick="loadTableForEditing()">Загрузить</button>
+            </div>
+        </div>
+
+        <div id="edit-table-form" style="display: none;">
+            <div class="form-group">
+                <label for="edit-table-name">Название таблицы:</label>
+                <input type="text" id="edit-table-name" readonly>
+            </div>
+
+            <h3>Поля таблицы:</h3>
+            <table id="edit-columns-table" class="columns-table">
+                <thead>
+                <tr>
+                    <th>Имя поля</th>
+                    <th>Тип данных</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody id="edit-columns-body">
+                <!-- Columns will be added here -->
+                </tbody>
+            </table>
+
+            <div class="table-actions">
+                <button type="button" onclick="addEditColumn()">Добавить поле</button>
+                <button type="button" onclick="updateTable()">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Export Table Modal -->
+<div id="export-table-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 600px;">
+        <span class="close" onclick="hideExportTableModal()">&times;</span>
+        <h2>Экспорт таблицы в CSV</h2>
+        <div id="tables-list-container-export">
+            <p>Загрузка списка таблиц...</p>
+        </div>
+        <div class="modal-actions">
+            <button onclick="exportTableToCSV()">ОК</button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Result Modal -->
+<div id="export-result-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideExportResultModal()">&times;</span>
+        <h2>Экспорт завершен</h2>
+        <div id="export-result-message"></div>
+        <button onclick="hideExportResultModal()">Закрыть</button>
+    </div>
+</div>
+
+<!-- Backup Modal -->
+<div id="backup-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 600px;">
+        <span class="close" onclick="hideBackupModal()">&times;</span>
+        <h2>Создать полный бэкап</h2>
+        <div id="backup-status">
+            <p>Подготовка к созданию бэкапа...</p>
+        </div>
+        <div id="backup-result" style="display: none;">
+            <div class="form-group">
+                <label>Путь к файлу бэкапа:</label>
+                <input type="text" id="backup-path" readonly>
+                <button onclick="copyBackupPath()">Копировать путь</button>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="hideBackupModal()">Закрыть</button>
+        </div>
+    </div>
+</div>
+<script>
+    // Show connection modal
+    function showConnectionModal() {
+        fetch('/connect')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('connection-modal').style.display = 'block';
+            });
+    }
+
+    // Hide connection modal
+    function hideConnectionModal() {
+        document.getElementById('connection-modal').style.display = 'none';
+    }
+
+    // Handle connection form submission
+    function connectToDB() {
+        const form = document.getElementById('connection-form');
+        const formData = new FormData(form);
+
+        fetch('/connect', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.text())
+            .then(result => {
+                alert(result);
+                if (result.includes("successful")) {
+                    hideConnectionModal();
+                }
+            })
+            .catch(error => {
+                alert("Error: " + error);
+            });
+    }
+
+    function executeQuery() {
+        const query = document.getElementById('sql-query').value;
+        const resultDiv = document.getElementById('query-result');
+
+        // Clear previous results
+        resultDiv.innerHTML = "<div class='loading'>Executing query...</div>";
+
+        fetch('/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({query: query})
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(html => {
+                resultDiv.innerHTML = html;
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+    }
+
+    // Add these new functions
+    function showSaveModal() {
+        document.getElementById('save-modal').style.display = 'block';
+    }
+
+    function hideSaveModal() {
+        document.getElementById('save-modal').style.display = 'none';
+    }
+
+    function saveQueryToFile() {
+        const queryName = document.getElementById('query-name').value;
+        const queryText = document.getElementById('sql-query').value;
+
+        if (!queryName) {
+            alert("Пожалуйста, введите название запроса");
+            return;
+        }
+
+        if (!queryText) {
+            alert("Нет запроса для сохранения");
+            return;
+        }
+
+        fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                queryName: queryName,
+                queryText: queryText
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideSaveModal();
+                document.getElementById('query-name').value = ''; // Clear the input
+            })
+            .catch(error => {
+                alert("Ошибка при сохранении: " + error.message);
+            });
+    }
+
+    function showLabQueries() {
+        fetch('/lab-queries')
+            .then(response => response.json())
+            .then(queries => {
+                const listDiv = document.getElementById('lab-queries-list');
+                listDiv.innerHTML = '';
+
+                if (queries.length === 0) {
+                    listDiv.innerHTML = '<div class="no-queries">Нет сохраненных запросов</div>';
+                    return;
+                }
+
+                queries.forEach(query => {
+                    const queryDiv = document.createElement('div');
+                    queryDiv.className = 'query-item';
+                    queryDiv.textContent = query;
+                    queryDiv.onclick = function() {
+                        // Remove selection from all items
+                        document.querySelectorAll('.query-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        // Add selection to clicked item
+                        this.classList.add('selected');
+                        selectedQuery = query;
+                    };
+                    listDiv.appendChild(queryDiv);
+                });
+
+                document.getElementById('lab-queries-modal').style.display = 'block';
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке запросов: " + error.message);
+            });
+    }
+
+    function hideLabQueriesModal() {
+        document.getElementById('lab-queries-modal').style.display = 'none';
+        selectedQuery = null;
+    }
+
+
+    // Add these global variables
+    let currentEditingQuery = null;
+    let selectedQuery = null;
+
+    // Add these new functions
+    function showQueries() {
+        fetch('/queries')
+            .then(response => response.json())
+            .then(queries => {
+                const listDiv = document.getElementById('queries-list');
+                listDiv.innerHTML = '';
+
+                if (queries.length === 0) {
+                    listDiv.innerHTML = '<div class="no-queries">Нет сохраненных запросов</div>';
+                    return;
+                }
+
+                queries.forEach(query => {
+                    const queryDiv = document.createElement('div');
+                    queryDiv.className = 'query-item';
+                    queryDiv.textContent = query;
+                    queryDiv.onclick = function() {
+                        // Remove selection from all items
+                        document.querySelectorAll('.query-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        // Add selection to clicked item
+                        this.classList.add('selected');
+                        selectedQuery = query;
+                    };
+                    listDiv.appendChild(queryDiv);
+                });
+
+                document.getElementById('queries-modal').style.display = 'block';
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке запросов: " + error.message);
+            });
+    }
+
+    function hideQueriesModal() {
+        document.getElementById('queries-modal').style.display = 'none';
+        selectedQuery = null;
+    }
+
+    function executeSelectedQuery() {
+        if (!selectedQuery) {
+            alert("Пожалуйста, выберите запрос");
+            return;
+        }
+
+        fetch('/queries?name=' + encodeURIComponent(selectedQuery), {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('sql-query').value = data.content;
+                hideQueriesModal();
+                executeQuery(); // Automatically execute the query
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке запроса: " + error.message);
+            });
+    }
+
+    function executeSelectedLabQuery() {
+        if (!selectedQuery) {
+            alert("Пожалуйста, выберите запрос");
+            return;
+        }
+
+        fetch('/lab-queries?name=' + encodeURIComponent(selectedQuery), {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('sql-query').value = data.content;
+                hideQueriesModal();
+                executeQuery(); // Automatically execute the query
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке запроса: " + error.message);
+            });
+    }
+
+
+    function editSelectedQuery() {
+        if (!selectedQuery) {
+            alert("Пожалуйста, выберите запрос");
+            return;
+        }
+
+        fetch('/queries?name=' + encodeURIComponent(selectedQuery), {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                currentEditingQuery = selectedQuery;
+                showEditQueryModal(data.name, data.content);
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке запроса: " + error.message);
+            });
+    }
+
+    function showEditQueryModal(name, content) {
+        document.getElementById('edit-query-name').value = name;
+        document.getElementById('edit-query-content').value = content;
+        document.getElementById('edit-query-modal').style.display = 'block';
+
+        // Focus the textarea and set cursor to end
+        const textarea = document.getElementById('edit-query-content');
+        textarea.focus();
+        textarea.setSelectionRange(content.length, content.length);
+    }
+
+    function hideEditQueryModal() {
+        document.getElementById('edit-query-modal').style.display = 'none';
+        currentEditingQuery = null;
+    }
+
+    function saveEditedQuery() {
+        const queryName = document.getElementById('edit-query-name').value;
+        const queryContent = document.getElementById('edit-query-content').value;
+
+        if (!queryName || !queryContent) {
+            alert("Название и содержимое запроса не могут быть пустыми");
+            return;
+        }
+
+        fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                queryName: queryName,
+                queryText: queryContent
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideEditQueryModal();
+                showQueries(); // Refresh the queries list
+            })
+            .catch(error => {
+                alert("Ошибка при сохранении запроса: " + error.message);
+            });
+    }
+
+    function deleteSelectedQuery() {
+        if (!selectedQuery) {
+            alert("Пожалуйста, выберите запрос");
+            return;
+        }
+
+        if (!confirm(`Вы уверены, что хотите удалить запрос "${selectedQuery}"?`)) {
+            return;
+        }
+
+        fetch('/queries?name=' + encodeURIComponent(selectedQuery), {
+            method: 'DELETE'
+        })
+            .then(response => response.text())
+            .then(message => {
+                alert(message);
+                showQueries(); // Refresh the list
+            })
+            .catch(error => {
+                alert("Ошибка при удалении запроса: " + error.message);
+            });
+    }
+
+
+    function saveQuery() {
+        showSaveModal();
+    }
+
+
+    // Add these functions for table creation
+    function showCreateTableModal() {
+        document.getElementById('create-table-modal').style.display = 'block';
+        // Add one initial column
+        addColumn();
+    }
+
+    function hideCreateTableModal() {
+        document.getElementById('create-table-modal').style.display = 'none';
+        // Clear the form
+        document.getElementById('table-name').value = '';
+        document.getElementById('columns-body').innerHTML = '';
+    }
+
+    function addColumn() {
+        const tbody = document.getElementById('columns-body');
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+        <td><input type="text" class="column-name" placeholder="Имя поля"></td>
+        <td>
+            <select class="column-type">
+                <option value="INTEGER">INTEGER</option>
+                <option value="VARCHAR(255)">VARCHAR(255)</option>
+                <option value="TEXT">TEXT</option>
+                <option value="BOOLEAN">BOOLEAN</option>
+                <option value="DATE">DATE</option>
+                <option value="TIMESTAMP">TIMESTAMP</option>
+                <option value="NUMERIC">NUMERIC</option>
+                <option value="SERIAL">SERIAL</option>
+            </select>
+        </td>
+        <td><button type="button" onclick="deleteColumn(this)">Удалить</button></td>
+    `;
+
+        tbody.appendChild(row);
+    }
+
+    function deleteColumn(button) {
+        const row = button.closest('tr');
+        row.remove();
+    }
+
+    function createTable() {
+        const tableName = document.getElementById('table-name').value.trim();
+        if (!tableName) {
+            alert("Пожалуйста, введите название таблицы");
+            return;
+        }
+
+        const columns = [];
+        const rows = document.querySelectorAll('#columns-body tr');
+
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.column-name');
+            const typeSelect = row.querySelector('.column-type');
+
+            if (nameInput.value.trim()) {
+                columns.push({
+                    name: nameInput.value.trim(),
+                    type: typeSelect.value
+                });
+            }
+        });
+
+        if (columns.length === 0) {
+            alert("Пожалуйста, добавьте хотя бы одно поле");
+            return;
+        }
+
+        fetch('/create-table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                tableName: tableName,
+                columns: columns
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideCreateTableModal();
+            })
+            .catch(error => {
+                alert("Ошибка при создании таблицы: " + error.message);
+            });
+    }
+
+    function deleteTable() {
+        showDeleteTableModal();
+    }
+
+    function showDeleteTableModal() {
+        fetch('/tables')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tables');
+                }
+                return response.json();
+            })
+            .then(tables => {
+                const container = document.getElementById('tables-list-container');
+                if (tables.length === 0) {
+                    container.innerHTML = '<p>Нет таблиц в базе данных</p>';
+                    return;
+                }
+
+                let html = '<select id="tables-list" class="tables-select">';
+                tables.forEach(table => {
+                    html += `<option value="${table}">${table}</option>`;
+                });
+                html += '</select>';
+                container.innerHTML = html;
+
+                document.getElementById('delete-table-modal').style.display = 'block';
+            })
+            .catch(error => {
+                document.getElementById('tables-list-container').innerHTML =
+                    `<p class="error">Ошибка при загрузке таблиц: ${error.message}</p>`;
+                document.getElementById('delete-table-modal').style.display = 'block';
+            });
+    }
+
+    function hideDeleteTableModal() {
+        document.getElementById('delete-table-modal').style.display = 'none';
+    }
+
+    function confirmDeleteTable() {
+        const select = document.getElementById('tables-list');
+        if (!select) {
+            alert('Нет таблиц для удаления');
+            return;
+        }
+
+        const tableName = select.value;
+        if (!tableName) {
+            alert('Пожалуйста, выберите таблицу');
+            return;
+        }
+
+        if (!confirm(`Вы уверены, что хотите удалить таблицу "${tableName}"? Это действие нельзя отменить.`)) {
+            return;
+        }
+
+        fetch('/delete-table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tableName: tableName })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideDeleteTableModal();
+            })
+            .catch(error => {
+                alert(`Ошибка при удалении таблицы: ${error.message}`);
+            });
+    }
+
+
+    function editTable() {
+        showEditTableModal();
+    }
+
+    function showEditTableModal() {
+        fetch('/tables')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tables');
+                }
+                return response.json();
+            })
+            .then(tables => {
+                const select = document.getElementById('edit-tables-list');
+                select.innerHTML = '';
+
+                if (tables.length === 0) {
+                    select.innerHTML = '<option value="">Нет таблиц в базе данных</option>';
+                    return;
+                }
+
+                tables.forEach(table => {
+                    const option = document.createElement('option');
+                    option.value = table;
+                    option.textContent = table;
+                    select.appendChild(option);
+                });
+
+                document.getElementById('edit-table-modal').style.display = 'block';
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке таблиц: " + error.message);
+            });
+    }
+
+    function hideEditTableModal() {
+        document.getElementById('edit-table-modal').style.display = 'none';
+        document.getElementById('edit-table-selection').style.display = 'block';
+        document.getElementById('edit-table-form').style.display = 'none';
+    }
+
+    function loadTableForEditing() {
+        const tableName = document.getElementById('edit-tables-list').value;
+        if (!tableName) {
+            alert("Пожалуйста, выберите таблицу");
+            return;
+        }
+
+        fetch('/table-info?name=' + encodeURIComponent(tableName))
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch table info');
+                }
+                return response.json();
+            })
+            .then(tableInfo => {
+                document.getElementById('edit-table-name').value = tableInfo.tableName;
+
+                const tbody = document.getElementById('edit-columns-body');
+                tbody.innerHTML = '';
+
+                tableInfo.columns.forEach(column => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td><input type="text" class="edit-column-name" value="${column.name}" placeholder="Имя поля"></td>
+                    <td>
+                        <select class="edit-column-type">
+                            <option value="INTEGER" ${column.type === 'INTEGER' ? 'selected' : ''}>INTEGER</option>
+                            <option value="VARCHAR(255)" ${column.type === 'VARCHAR(255)' ? 'selected' : ''}>VARCHAR(255)</option>
+                            <option value="TEXT" ${column.type === 'TEXT' ? 'selected' : ''}>TEXT</option>
+                            <option value="BOOLEAN" ${column.type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
+                            <option value="DATE" ${column.type === 'DATE' ? 'selected' : ''}>DATE</option>
+                            <option value="TIMESTAMP" ${column.type === 'TIMESTAMP' ? 'selected' : ''}>TIMESTAMP</option>
+                            <option value="NUMERIC" ${column.type === 'NUMERIC' ? 'selected' : ''}>NUMERIC</option>
+                            <option value="SERIAL" ${column.type === 'SERIAL' ? 'selected' : ''}>SERIAL</option>
+                        </select>
+                    </td>
+                    <td><button type="button" onclick="deleteEditColumn(this)">Удалить</button></td>
+                `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('edit-table-selection').style.display = 'none';
+                document.getElementById('edit-table-form').style.display = 'block';
+            })
+            .catch(error => {
+                alert("Ошибка при загрузке информации о таблице: " + error.message);
+            });
+    }
+
+    function addEditColumn() {
+        const tbody = document.getElementById('edit-columns-body');
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+        <td><input type="text" class="edit-column-name" placeholder="Имя поля"></td>
+        <td>
+            <select class="edit-column-type">
+                <option value="INTEGER">INTEGER</option>
+                <option value="VARCHAR(255)">VARCHAR(255)</option>
+                <option value="TEXT">TEXT</option>
+                <option value="BOOLEAN">BOOLEAN</option>
+                <option value="DATE">DATE</option>
+                <option value="TIMESTAMP">TIMESTAMP</option>
+                <option value="NUMERIC">NUMERIC</option>
+                <option value="SERIAL">SERIAL</option>
+            </select>
+        </td>
+        <td><button type="button" onclick="deleteEditColumn(this)">Удалить</button></td>
+    `;
+
+        tbody.appendChild(row);
+    }
+
+    function deleteEditColumn(button) {
+        const row = button.closest('tr');
+        row.remove();
+    }
+
+    function updateTable() {
+        const tableName = document.getElementById('edit-table-name').value;
+        if (!tableName) {
+            alert("Название таблицы не указано");
+            return;
+        }
+
+        const columns = [];
+        const rows = document.querySelectorAll('#edit-columns-body tr');
+
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.edit-column-name');
+            const typeSelect = row.querySelector('.edit-column-type');
+
+            if (nameInput.value.trim()) {
+                columns.push({
+                    name: nameInput.value.trim(),
+                    type: typeSelect.value
+                });
+            }
+        });
+
+        if (columns.length === 0) {
+            alert("Пожалуйста, добавьте хотя бы одно поле");
+            return;
+        }
+
+        if (!confirm("Вы уверены, что хотите обновить структуру таблицы? Это действие нельзя отменить.")) {
+            return;
+        }
+
+        fetch('/edit-table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                tableName: tableName,
+                columns: columns
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideEditTableModal();
+            })
+            .catch(error => {
+                alert("Ошибка при обновлении таблицы: " + error.message);
+            });
+    }
+
+
+
+
+    // Add these functions for table export
+    function showExportTableModal() {
+        fetch('/tables')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tables');
+                }
+                return response.json();
+            })
+            .then(tables => {
+                const container = document.getElementById('tables-list-container-export');
+                if (tables.length === 0) {
+                    container.innerHTML = '<p>Нет таблиц в базе данных</p>';
+                    return;
+                }
+
+                let html = '<select id="tables-list-export" class="tables-select">';
+                tables.forEach(table => {
+                    html += `<option value="${table}">${table}</option>`;
+                });
+                html += '</select>';
+                container.innerHTML = html;
+
+                document.getElementById('export-table-modal').style.display = 'block';
+            })
+            .catch(error => {
+                document.getElementById('tables-list-container-export').innerHTML =
+                    `<p class="error">Ошибка при загрузке таблиц: ${error.message}</p>`;
+                document.getElementById('export-table-modal').style.display = 'block';
+            });
+    }
+
+    function hideExportTableModal() {
+        document.getElementById('export-table-modal').style.display = 'none';
+    }
+
+    function showExportResultModal(message) {
+        document.getElementById('export-result-message').textContent = message;
+        document.getElementById('export-result-modal').style.display = 'block';
+    }
+
+    function hideExportResultModal() {
+        document.getElementById('export-result-modal').style.display = 'none';
+    }
+
+    function exportTableToCSV() {
+        const select = document.getElementById('tables-list-export');
+        if (!select) {
+            alert('Нет таблиц для удаления');
+            return;
+        }
+
+        const tableName = select.value;
+        if (!tableName) {
+            alert('Пожалуйста, выберите таблицу');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('tableName', tableName);
+
+        fetch('/export-table', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(filePath => {
+                hideExportTableModal();
+                showExportResultModal(`Таблица успешно экспортирована в:\n${filePath}`);
+            })
+            .catch(error => {
+                alert("Ошибка при экспорте таблицы: " + error.message);
+            });
+    }
+
+    // Add these functions for result export
+    function exportResults() {
+        const resultTable = document.getElementById('query-result').innerHTML;
+        if (!resultTable.includes('<table')) {
+            alert("Нет результатов для экспорта");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('htmlTable', resultTable);
+
+        fetch('/export-results', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(filePath => {
+                showExportResultModal(`Результаты успешно экспортированы в:\n${filePath}`);
+            })
+            .catch(error => {
+                alert("Ошибка при экспорте результатов: " + error.message);
+            });
+    }
+
+    function createBackup() {
+        showBackupModal();
+        startBackupProcess();
+    }
+
+    function showBackupModal() {
+        document.getElementById('backup-modal').style.display = 'block';
+        document.getElementById('backup-status').style.display = 'block';
+        document.getElementById('backup-result').style.display = 'none';
+    }
+
+    function hideBackupModal() {
+        document.getElementById('backup-modal').style.display = 'none';
+    }
+
+    function startBackupProcess() {
+        const statusDiv = document.getElementById('backup-status');
+        statusDiv.innerHTML = '<p>Создание бэкапа... Пожалуйста, подождите.</p>';
+
+        fetch('/backup', {
+            method: 'POST'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.json();
+            })
+            .then(data => {
+                statusDiv.innerHTML = '<p class="success">Бэкап успешно создан!</p>';
+                document.getElementById('backup-path').value = data.filePath;
+                document.getElementById('backup-result').style.display = 'block';
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<p class="error">Ошибка при создании бэкапа: ${error.message}</p>`;
+            });
+    }
+
+    function copyBackupPath() {
+        const pathInput = document.getElementById('backup-path');
+        pathInput.select();
+        document.execCommand('copy');
+        alert('Путь скопирован в буфер обмена');
+    }
+    function restoreBackup() {
+        fetch('/restore')
+            .then(response => response.text())
+            .then(alert);
+    }
+</script>
+</body>
+</html>
