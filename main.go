@@ -795,5 +795,68 @@ func backupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func restoreHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Restore Backup functionality will be implemented here"))
+	if db == nil {
+		http.Error(w, "Not connected to database", http.StatusBadRequest)
+		return
+	}
+
+	if r.Method == "GET" {
+		// List available backup files
+		files, err := os.ReadDir("backups")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to read backups directory: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		var backupFiles []string
+		for _, file := range files {
+			if strings.HasSuffix(file.Name(), ".sql") || strings.HasSuffix(file.Name(), ".dump") {
+				backupFiles = append(backupFiles, file.Name())
+			}
+		}
+
+		json.NewEncoder(w).Encode(backupFiles)
+		return
+	}
+
+	if r.Method == "POST" {
+		// Execute restore
+		backupFile := r.FormValue("backupFile")
+		if backupFile == "" {
+			http.Error(w, "Backup file is required", http.StatusBadRequest)
+			return
+		}
+
+		// Validate file exists
+		filePath := filepath.Join("backups", backupFile)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			http.Error(w, "Backup file does not exist", http.StatusBadRequest)
+			return
+		}
+
+		// Execute pg_restore
+		cmd := exec.Command(
+			"pg_restore",
+			"-h", "localhost",
+			"-p", "5432",
+			"-U", dbUser,
+			"-d", dbName,
+			"-v",
+			"--clean",
+			"--create",
+			filePath,
+		)
+
+		cmd.Env = append(os.Environ(), "PGPASSWORD="+dbPass)
+
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+
+		cmd.Run()
+
+		w.Write([]byte("Database restored successfully"))
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }

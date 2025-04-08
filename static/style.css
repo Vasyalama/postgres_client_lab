@@ -60,6 +60,33 @@ body {
     box-sizing: border-box;
 }
 
+/*#connection-modal {*/
+/*    display: none;*/
+/*    position: fixed;*/
+/*    z-index: 1;*/
+/*    left: 0;*/
+/*    top: 0;*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    background-color: rgba(0, 0, 0, 0.4);*/
+
+/*}*/
+
+
+/* Modal content (centered box with 400px width) */
+#connection-modal .modal-content {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Perfect centering */
+    width: 400px; /* Fixed width */
+    max-width: 90%; /* Fallback for small screens */
+    background-color: #fefefe;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Modal styles */
 .modal {
     display: none;
@@ -78,7 +105,6 @@ body {
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
-    max-width: 500px;
     border-radius: 5px;
 }
 
@@ -327,13 +353,6 @@ button[type="submit"]:hover {
     border-radius: 4px;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
 .modal-actions button {
     padding: 8px 16px;
     border: none;
@@ -395,53 +414,65 @@ button[type="submit"]:hover {
     opacity: 0.9;
 }
 
-/* Export Modal Styles */
-#export-result-message {
+
+/* Export Result Modal - Centered with dynamic width */
+/* Parent modal container - covers entire viewport */
+#export-result-modal,
+#export-table-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999; /* Ensure it's on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+/* Modal content - perfectly centered */
+#export-result-modal .modal-content,
+#export-table-modal .modal-content {
+    background-color: #fefefe;
+    position: fixed;
+    top: 20%; /* Changed from 50% to move it higher */
+    left: 50%;
+    transform: translate(-50%, -50%); /* Keep this to maintain exact centering */
+    padding: 20px;
+    border-radius: 8px;
+    width: auto;
+    min-width: 300px;
+    max-width: 90vw;
+    max-height: 70vh; /* Reduced from 90vh to prevent touching bottom */
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Message box styling */
+#export-result-message,
+#export-table-message {
     white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
     margin: 20px 0;
     padding: 10px;
     background-color: #f8f8f8;
     border-radius: 4px;
     font-family: monospace;
+    overflow: auto;
+    max-height: 60vh;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-#export-result-modal button {
+/* Button container to prevent wrapping issues */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
     margin-top: 15px;
-    padding: 8px 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
 }
 
-#export-result-modal button:hover {
-    background-color: #45a049;
-}
-
-/* Export Result Modal Styles */
-#export-result-message {
-    white-space: pre-wrap;
-    margin: 20px 0;
-    padding: 10px;
-    background-color: #f8f8f8;
-    border-radius: 4px;
-    font-family: monospace;
-}
-
-#export-result-modal button {
-    margin-top: 15px;
-    padding: 8px 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#export-result-modal button:hover {
-    background-color: #45a049;
-}
 
 /* Backup Modal Styles */
 #backup-status {
@@ -486,20 +517,58 @@ button[type="submit"]:hover {
     background-color: #0b7dda;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.modal-actions button {
-    padding: 8px 16px;
-    background-color: #f1f1f1;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
 
 .modal-actions button:hover {
     background-color: #e1e1e1;
 }
+
+/* Restore Modal Styles */
+.backups-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.backup-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.backup-item:hover {
+    background-color: #f5f5f5;
+}
+
+.backup-item.selected {
+    background-color: #e6f7ff;
+    font-weight: bold;
+}
+
+.no-backups {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.restore-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.restore-btn:hover {
+    background-color: #45a049;
+}
+
+/* Restore Result Modal */
+#restore-result-message {
+    white-space: pre-wrap;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+

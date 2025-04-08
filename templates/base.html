@@ -80,7 +80,7 @@
             <label for="edit-query-name">Название запроса:</label>
             <input type="text" id="edit-query-name" readonly>
         </div>
-        <textarea id="edit-query-content" style="width: 100%; height: 70%; font-family: monospace;"></textarea>
+        <textarea id="edit-query-content" style="width: 100%; height: 60%; font-family: monospace; resize: none;"></textarea>
         <div class="modal-actions">
             <button onclick="saveEditedQuery()">Сохранить</button>
             <button onclick="hideEditQueryModal()">Отмена</button>
@@ -235,6 +235,33 @@
         </div>
     </div>
 </div>
+
+<!-- Restore Backup Modal -->
+<div id="restore-modal" class="modal">
+    <div class="modal-content" style="width: 70%; max-width: 800px;">
+        <span class="close" onclick="hideRestoreModal()">&times;</span>
+        <h2>Восстановить бэкап</h2>
+        <div id="backups-list" class="backups-list">
+            <!-- Backups will be loaded here -->
+            <p>Загрузка списка бэкапов...</p>
+        </div>
+        <div class="modal-actions">
+            <button onclick="confirmRestore()" class="restore-btn">Восстановить</button>
+            <button onclick="hideRestoreModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Result Modal -->
+<div id="restore-result-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideRestoreResultModal()">&times;</span>
+        <h2>Результат восстановления</h2>
+        <div id="restore-result-message"></div>
+        <button onclick="hideRestoreResultModal()">Закрыть</button>
+    </div>
+</div>
+
 <script>
     // Show connection modal
     function showConnectionModal() {
@@ -1080,10 +1107,94 @@
         document.execCommand('copy');
         alert('Путь скопирован в буфер обмена');
     }
+
+    // Add these functions for backup restore
+    let selectedBackupFile = null;
+
     function restoreBackup() {
+        showRestoreModal();
+    }
+
+    function showRestoreModal() {
         fetch('/restore')
-            .then(response => response.text())
-            .then(alert);
+            .then(response => response.json())
+            .then(backups => {
+                const listDiv = document.getElementById('backups-list');
+                listDiv.innerHTML = '';
+
+                if (backups.length === 0) {
+                    listDiv.innerHTML = '<div class="no-backups">Нет доступных бэкапов</div>';
+                    return;
+                }
+
+                backups.forEach(backup => {
+                    const backupDiv = document.createElement('div');
+                    backupDiv.className = 'backup-item';
+                    backupDiv.textContent = backup;
+                    backupDiv.onclick = function() {
+                        // Remove selection from all items
+                        document.querySelectorAll('.backup-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        // Add selection to clicked item
+                        this.classList.add('selected');
+                        selectedBackupFile = backup;
+                    };
+                    listDiv.appendChild(backupDiv);
+                });
+
+                document.getElementById('restore-modal').style.display = 'block';
+            })
+            .catch(error => {
+                document.getElementById('backups-list').innerHTML =
+                    '<div class="error">Ошибка загрузки бэкапов: ' + error.message + '</div>';
+            });
+    }
+
+    function hideRestoreModal() {
+        document.getElementById('restore-modal').style.display = 'none';
+        selectedBackupFile = null;
+    }
+
+    function confirmRestore() {
+        if (!selectedBackupFile) {
+            alert("Пожалуйста, выберите файл бэкапа");
+            return;
+        }
+
+        if (!confirm(`Вы уверены, что хотите восстановить базу данных из файла "${selectedBackupFile}"? Это перезапишет текущую базу данных.`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('backupFile', selectedBackupFile);
+
+        fetch('/restore', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                }
+                return response.text();
+            })
+            .then(message => {
+                hideRestoreModal();
+                showRestoreResultModal(message);
+            })
+            .catch(error => {
+                showRestoreResultModal("Ошибка при восстановлении: " + error.message);
+            });
+    }
+
+    function showRestoreResultModal(message) {
+        document.getElementById('restore-result-message').textContent = message;
+        document.getElementById('restore-result-modal').style.display = 'block';
+    }
+
+    function hideRestoreResultModal() {
+        document.getElementById('restore-result-modal').style.display = 'none';
     }
 </script>
 </body>

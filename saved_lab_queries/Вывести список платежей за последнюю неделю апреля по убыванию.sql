@@ -1,0 +1,4 @@
+SELECT *
+FROM public.payment
+WHERE date BETWEEN '2020-04-24' AND '2020-04-30'
+ORDER BY date DESC;
