@@ -843,14 +843,14 @@
                     <td><input type="text" class="edit-column-name" value="${column.name}" placeholder="Имя поля"></td>
                     <td>
                         <select class="edit-column-type">
-                            <option value="INTEGER" ${column.type === 'INTEGER' ? 'selected' : ''}>INTEGER</option>
-                            <option value="VARCHAR(255)" ${column.type === 'VARCHAR(255)' ? 'selected' : ''}>VARCHAR(255)</option>
-                            <option value="TEXT" ${column.type === 'TEXT' ? 'selected' : ''}>TEXT</option>
-                            <option value="BOOLEAN" ${column.type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
-                            <option value="DATE" ${column.type === 'DATE' ? 'selected' : ''}>DATE</option>
-                            <option value="TIMESTAMP" ${column.type === 'TIMESTAMP' ? 'selected' : ''}>TIMESTAMP</option>
-                            <option value="NUMERIC" ${column.type === 'NUMERIC' ? 'selected' : ''}>NUMERIC</option>
-                            <option value="SERIAL" ${column.type === 'SERIAL' ? 'selected' : ''}>SERIAL</option>
+                            <option value="INTEGER" ${column.type === 'integer' ? 'selected' : ''}>INTEGER</option>
+                            <option value="VARCHAR(255)" ${column.type === 'character varying' ? 'selected' : ''}>VARCHAR(255)</option>
+                            <option value="TEXT" ${column.type === 'text' ? 'selected' : ''}>TEXT</option>
+                            <option value="BOOLEAN" ${column.type === 'boolean' ? 'selected' : ''}>BOOLEAN</option>
+                            <option value="DATE" ${column.type === 'date' ? 'selected' : ''}>DATE</option>
+                            <option value="TIMESTAMP" ${column.type === 'timestamp' ? 'selected' : ''}>TIMESTAMP</option>
+                            <option value="NUMERIC" ${column.type === 'numeric' ? 'selected' : ''}>NUMERIC</option>
+                            <option value="SERIAL" ${column.type === 'serial' ? 'selected' : ''}>SERIAL</option>
                         </select>
                     </td>
                     <td><button type="button" onclick="deleteEditColumn(this)">Удалить</button></td>
