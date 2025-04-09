@@ -61,6 +61,7 @@ func main() {
 	http.HandleFunc("/tables", listTablesHandler)
 	http.HandleFunc("/edit-table", editTableHandler)
 	http.HandleFunc("/table-info", tableInfoHandler)
+	http.HandleFunc("/export-all-tables", exportAllTablesHandler)
 	http.HandleFunc("/export-table", exportTableHandler)
 	http.HandleFunc("/export-results", exportResultsHandler)
 	http.HandleFunc("/backup", backupHandler)
@@ -859,4 +860,112 @@ func restoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+// Handler to export all tables in the database to CSV
+func exportAllTablesHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Not connected to database", http.StatusBadRequest)
+		return
+	}
+
+	// Get all table names
+	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch table names: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to scan table name: %v", err), http.StatusInternalServerError)
+			return
+		}
+		tables = append(tables, tableName)
+	}
+
+	// Create directory for saved CSV files if it doesn't exist
+	err = os.MkdirAll("saved_csv_tables", 0755)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Export each table to a CSV file
+	var exportedFiles []string
+	for _, table := range tables {
+		filePath, err := exportTableToCSV(table)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to export table '%s': %v", table, err), http.StatusInternalServerError)
+			return
+		}
+		exportedFiles = append(exportedFiles, filePath)
+	}
+
+	// Respond with success message and file paths
+	message := fmt.Sprintf("Экспорт завершен. Файлы: %s", strings.Join(exportedFiles, ", "))
+	w.Write([]byte(message))
+}
+
+// Function to export a single table to CSV
+func exportTableToCSV(tableName string) (string, error) {
+	safeName := filepath.Base(tableName) + ".csv"
+	filePath := filepath.Join("saved_csv_tables", safeName)
+
+	rows, err := db.Query(fmt.Sprintf("SELECT * FROM %s", tableName))
+	if err != nil {
+		return "", fmt.Errorf("failed to query table: %v", err)
+	}
+	defer rows.Close()
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create CSV file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return "", fmt.Errorf("failed to get columns: %v", err)
+	}
+	if err := writer.Write(columns); err != nil {
+		return "", fmt.Errorf("failed to write CSV headers: %v", err)
+	}
+
+	values := make([]interface{}, len(columns))
+	valuePtrs := make([]interface{}, len(columns))
+	for i := range columns {
+		valuePtrs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		err := rows.Scan(valuePtrs...)
+		if err != nil {
+			return "", fmt.Errorf("failed to scan row: %v", err)
+		}
+
+		record := make([]string, len(columns))
+		for i, val := range values {
+			if val == nil {
+				record[i] = "NULL"
+			} else {
+				record[i] = fmt.Sprintf("%v", val)
+			}
+		}
+		if err := writer.Write(record); err != nil {
+			return "", fmt.Errorf("failed to write CSV row: %v", err)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("error during rows iteration: %v", err)
+	}
+
+	return filePath, nil
 }

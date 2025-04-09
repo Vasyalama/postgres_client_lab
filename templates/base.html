@@ -17,6 +17,7 @@
         <button onclick="showCreateTableModal()">Создать таблицу</button>
         <button onclick="deleteTable()">Удалить таблицу</button>
         <button onclick="editTable()">Редактировать таблицу</button>
+        <button onclick="exportAllTablesToCSV()">Экспорт всех таблиц в CSV</button>
         <button onclick="showExportTableModal()">Экспорт таблицы в CSV</button>
         <button onclick="exportResults()">Экспорт результатов запроса</button>
         <button onclick="createBackup()">Создать бэкап</button>
@@ -951,7 +952,25 @@
             });
     }
 
+    function exportAllTablesToCSV() {
+        fetch('/export-all-tables', { method: 'POST' })
+            .then(response => response.text())
+            .then(message => {
+                showExportResultModal(message);
+            })
+            .catch(error => {
+                showExportResultModal(`Ошибка: ${error.message}`);
+            });
+    }
 
+    function showExportResultModal(message) {
+        document.getElementById('export-result-message').textContent = message;
+        document.getElementById('export-result-modal').style.display = 'block';
+    }
+
+    function hideExportResultModal() {
+        document.getElementById('export-result-modal').style.display = 'none';
+    }
 
 
     // Add these functions for table export
